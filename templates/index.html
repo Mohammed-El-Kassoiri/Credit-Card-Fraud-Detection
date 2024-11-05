@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Détection de Fraude de Carte de Crédit</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="/static/css/style.css" rel="stylesheet">
+    <style>
+        .prediction-curve-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            height: 400px; /* Fixed height for the container */
+        }
+        .curve-title {
+            text-align: center;
+            margin-bottom: 15px;
+            color: #333;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="text-center mb-4">Détection de Fraude de Carte de Crédit</h1>
+        
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="training-tab" data-bs-toggle="tab" data-bs-target="#training">
+                    Entraînement
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="prediction-tab" data-bs-toggle="tab" data-bs-target="#prediction">
+                    Prédiction
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="myTabContent">
+            <!-- Training Tab -->
+            <div class="tab-pane fade show active" id="training" role="tabpanel">
+                <div class="card">
+                    <div class="card-body">
+                        <button id="train-button" class="btn btn-primary">
+                            Entraîner le modèle
+                        </button>
+
+                        <div id="loading" class="d-none mt-3">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Chargement...</span>
+                            </div>
+                            <span class="ms-2">Entraînement en cours... Veuillez patienter...</span>
+                        </div>
+
+                        <div class="stats-container">
+                            <div class="row">
+                                <div class="col-md-3 text-center">
+                                    <div id="total-transactions" class="stats-value">-</div>
+                                    <div class="stats-label">Total Transactions</div>
+                                </div>
+                                <div class="col-md-3 text-center">
+                                    <div id="fraud-transactions" class="stats-value">-</div>
+                                    <div class="stats-label">Transactions Frauduleuses</div>
+                                </div>
+                                <div class="col-md-3 text-center">
+                                    <div id="legitimate-transactions" class="stats-value">-</div>
+                                    <div class="stats-label">Transactions Légitimes</div>
+                                </div>
+                                <div class="col-md-3 text-center">
+                                    <div id="model-accuracy" class="stats-value">-</div>
+                                    <div class="stats-label">Précision du Modèle</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="training-result" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prediction Tab -->
+            <div class="tab-pane fade" id="prediction" role="tabpanel">
+                <div class="card">
+                    <div class="card-body">
+                        <form id="prediction-form">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <h4>Information Transaction</h4>
+                                    <div class="mb-3">
+                                        <label class="form-label">Montant (TX_AMOUNT)</label>
+                                        <input type="number" class="form-control" value="50" name="TX_AMOUNT" required step="0.01">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Pendant le weekend</label>
+                                        <select class="form-select" name="TX_DURING_WEEKEND">
+                                            <option value="0">Non</option>
+                                            <option value="1">Oui</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Pendant la nuit</label>
+                                        <select class="form-select" name="TX_DURING_NIGHT">
+                                            <option value="0">Non</option>
+                                            <option value="1">Oui</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <h4>Statistiques Client</h4>
+                                    <div class="mb-3">
+                                        <label class="form-label">Nb transactions (1 jour)</label>
+                                        <input type="number" class="form-control" value="3" name="CUSTOMER_ID_NB_TX_1DAY_WINDOW" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Nb transactions (7 jours)</label>
+                                        <input type="number" class="form-control" value="15" name="CUSTOMER_ID_NB_TX_7DAY_WINDOW" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Nb transactions (30 jours)</label>
+                                        <input type="number" class="form-control" value="50" name="CUSTOMER_ID_NB_TX_30DAY_WINDOW" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Montant moyen (1 jour)</label>
+                                        <input type="number" class="form-control" value="40" name="CUSTOMER_ID_AVG_AMOUNT_1DAY_WINDOW" required step="0.01">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Montant moyen (7 jours)</label>
+                                        <input type="number" class="form-control" value="60" name="CUSTOMER_ID_AVG_AMOUNT_7DAY_WINDOW" required step="0.01">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Montant moyen (30 jours)</label>
+                                        <input type="number" class="form-control" value="50" name="CUSTOMER_ID_AVG_AMOUNT_30DAY_WINDOW" required step="0.01">
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <h4>Statistiques Terminal</h4>
+                                    <div class="mb-3">
+                                        <label class="form-label">Nb transactions (1 jour)</label>
+                                        <input type="number" class="form-control" value="1" name="TERMINAL_ID_NB_TX_1DAY_WINDOW" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Nb transactions (7 jours)</label>
+                                        <input type="number" class="form-control" value="7" name="TERMINAL_ID_NB_TX_7DAY_WINDOW" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Nb transactions (30 jours)</label>
+                                        <input type="number" class="form-control" value="25" name="TERMINAL_ID_NB_TX_30DAY_WINDOW" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Risque terminal (1 jour)</label>
+                                        <input type="number" class="form-control" value="0" name="TERMINAL_ID_RISK_1DAY_WINDOW" required step="0.01">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Risque terminal (7 jours)</label>
+                                        <input type="number" class="form-control" value="0" name="TERMINAL_ID_RISK_7DAY_WINDOW" required step="0.01">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Risque terminal (30 jours)</label>
+                                        <input type="number" class="form-control" value="0" name="TERMINAL_ID_RISK_30DAY_WINDOW" required step="0.01">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary">Prédire</button>
+                                </div>
+                            </div>
+                        </form>
+
+                        <div id="prediction-result" class="mt-4"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="./static/js/main.js"></script>
+</body>
+</html>
