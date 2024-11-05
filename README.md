@@ -1,4 +1,6 @@
-# Credit-Card-Fraud-Detection
+<h1 align = center>Credit Card Fraud Detection</h1>
+
+
 This is a web application that uses a machine learning model to detect credit card fraud. The application consists of a Flask-based backend API that handles data loading, preprocessing, model training, and prediction, and a web-based user interface built with HTML and JavaScript.
 
 ## Features
@@ -17,6 +19,8 @@ This is a web application that uses a machine learning model to detect credit ca
    - The application includes a graphical representation of the prediction confidence distribution using a custom chart.
    - The feature importance is displayed as a bar chart, allowing users to understand which input features contribute the most to the prediction.
    - The confusion matrix is shown in a tabular format, providing detailed information about the model's performance.
+
+Database used is [Credit Card Fraud Detection](https://www.kaggle.com/api/v1/datasets/download/elkassoirimohammed/credit-card-fraud-detection-using-flask) from Kaggle
 
 ## Installation
 
